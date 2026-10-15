@@ -91,6 +91,20 @@ Browser cookies are read once and checked before yt-dlp is handed the browser. y
 
 Failures carry an `error_kind` (`net.error_kind()`), so the UI can say which of these went wrong in the person's language and point at the setting that fixes it. The raw message stays in `error` for anyone debugging.
 
+### Playlists, streaming and the queue
+
+The desktop player started as a way to hear the library. It is now a music player in its own right: songs that are not on disk play in full online, the queue can be read and rearranged, and people keep playlists of their own that travel between machines. Three decisions hold that together.
+
+**A playlist entry is a song, not a file.** Each row stores catalog metadata — title, artists, album, length, the upload it came from — and, when there is one, the file's path relative to the music folder. It never stores a library id: those are hashes of a path on _this_ machine, and a playlist made of them would mean nothing anywhere else. Which rows are on disk is worked out on every read, by matching against the library scan (path first, then title + lead artist, then title + length), so a song downloaded, renamed or copied in from elsewhere becomes "on disk" without the playlist being told. The same metadata is what "Download all" hands the downloader: a playlist's job fetches exactly the rows that matched nothing, and its track ids are the rows' own ids, so progress lands on the right row.
+
+**Playlists live in a file, not in the webview.** `localStorage` is partitioned by origin, and the desktop's origin includes a port that is re-rolled whenever something else holds it — the bug that once made the app forget its language. That is a click to restore; an evening spent on a playlist is not. `PLAYLISTS_PATH` puts them beside `lyrics.db`, written atomically, and a file that cannot be parsed is left alone rather than overwritten. Exports go into the music folder's `Playlists/` — the app's own folder, so no path ever comes in from a request — as `.unstream.json` (lossless, what import reads) or `.m3u8` (for every other player). Import reads the file in the webview and posts its text, for the same reason. Catalog preview URLs are not kept: they are signed with an expiry and would be dead in a playlist by the next day.
+
+**A stream is relayed, in bounded chunks.** `/api/stream` takes a song's metadata, picks an upload the same way the downloader does, and relays the audio through the backend. Handing the webview the media URL would skip the connection setting above — the webview does not follow it — and YouTube's URLs only work with the headers they were issued with. Upstream ranges are capped at a few megabytes, because googlevideo throttles or cuts an open-ended request; the browser takes a short 206 and asks for the next piece. Formats are restricted to progressive m4a/mp3 first, since HLS cannot be relayed as one URL and Opus-in-WebM is unreliable on WebKit. Resolution costs seconds, so it is cached per song until shortly before the URL's own `expire`, and the player sends a `HEAD` for the next streamed song while the current one plays.
+
+Both are **desktop-only** unless `UNSTREAM_PLAYLISTS` / `UNSTREAM_STREAMING` say otherwise. One playlists file per process would be shared by every visitor of a hosted instance, and a stream relayed by a server costs its bandwidth for every listener — on an address YouTube refuses anyway.
+
+The queue keeps the listed order and a separate play order, as before; "play next", "add to queue", removing and dragging all go through one `commit` so the refs the audio callbacks read and the state the panel renders never disagree. The session — queue, song and position — is saved as it changes and restored **paused**: reopening the app is not a request for sound.
+
 <a id="farsi-only"></a>
 
 ## Farsi first, with a language layer
