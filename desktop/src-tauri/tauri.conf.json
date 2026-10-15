@@ -64,7 +64,7 @@
       "../../backend/dist/unstream-api/": "unstream-api/",
       "../../frontend/dist/": "dist/"
     },
-    "createUpdaterArtifacts": true
+    "createUpdaterArtifacts": false
   },
   "plugins": {
     "deep-link": {
@@ -77,7 +77,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFGODRCRTM5MzhGRDc0NDkKUldSSmRQMDRPYjZFSDAvTEpJbnkvWk84MHpCK1dNUUZxRlIzN2F3cng1QjlaRjV4dUJMOVhPYU8K",
       "endpoints": [
-        "https://github.com/amiralibg/unstream/releases/latest/download/latest.json"
+        "https://github.com/alimohammad0816/unstream/releases/latest/download/latest.json"
       ]
     }
   }
