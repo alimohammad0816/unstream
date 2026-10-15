@@ -60,7 +60,7 @@ function Scrubber({ m }: { m: Messages }) {
         dir="ltr"
         className="h-1 min-w-0 flex-1 cursor-pointer appearance-none rounded-full"
         style={{
-          background: `linear-gradient(to right, #c8f24f ${progress * 100}%, rgba(255,255,255,0.1) ${progress * 100}%)`,
+          background: `linear-gradient(to right, var(--color-lime-flash) ${progress * 100}%, color-mix(in oklab, var(--color-fg) 10%, transparent) ${progress * 100}%)`,
         }}
       />
       <span className="shrink-0 text-[10px] tabular-nums text-ink-500">{clock(max, m)}</span>
@@ -79,7 +79,7 @@ function VolumeControl({ m }: { m: Messages }) {
         type="button"
         onClick={toggleMute}
         aria-label={muted ? m.player.unmute : m.player.mute}
-        className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-white/[0.06] hover:text-ink-100 active:scale-90"
+        className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-fg/[0.06] hover:text-ink-100 active:scale-90"
       >
         <Icon className="size-4" />
       </button>
@@ -94,7 +94,7 @@ function VolumeControl({ m }: { m: Messages }) {
         dir="ltr"
         className="slider-volume h-1 w-20 cursor-pointer appearance-none rounded-full"
         style={{
-          background: `linear-gradient(to right, rgba(255,255,255,0.55) ${level * 100}%, rgba(255,255,255,0.1) ${level * 100}%)`,
+          background: `linear-gradient(to right, color-mix(in oklab, var(--color-fg) 55%, transparent) ${level * 100}%, color-mix(in oklab, var(--color-fg) 10%, transparent) ${level * 100}%)`,
         }}
       />
     </div>
@@ -155,7 +155,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
   const RepeatIcon = repeat === 'one' ? Repeat1 : Repeat
 
   return (
-    <div className="shrink-0 border-t border-white/[0.06] bg-[#0c0e0b]/95 px-4 py-2.5 backdrop-blur-xl">
+    <div className="shrink-0 border-t border-fg/[0.06] bg-shell/95 px-4 py-2.5 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[68rem] items-center gap-3">
         <button
           type="button"
@@ -212,7 +212,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
             title={m.player.shuffle}
             className={clsx(
               'hidden size-8 place-items-center rounded-full transition active:scale-90 sm:grid',
-              shuffle ? 'text-lime-flash' : 'text-ink-500 hover:bg-white/[0.06] hover:text-ink-100',
+              shuffle ? 'text-lime-flash' : 'text-ink-500 hover:bg-fg/[0.06] hover:text-ink-100',
             )}
           >
             <Shuffle className="size-3.5" />
@@ -221,7 +221,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
             type="button"
             onClick={prev}
             aria-label={m.player.previous}
-            className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-white/[0.06] hover:text-ink-100 active:scale-90"
+            className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-fg/[0.06] hover:text-ink-100 active:scale-90"
           >
             <SkipBack className="size-4" />
           </button>
@@ -229,7 +229,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
             type="button"
             onClick={toggle}
             aria-label={playing ? m.player.pause : m.player.play}
-            className="grid size-9 place-items-center rounded-full bg-lime-flash text-lime-ink shadow-[0_4px_16px_rgba(200,242,79,0.25)] transition hover:bg-lime-soft active:scale-90"
+            className="grid size-9 place-items-center rounded-full bg-lime-flash text-lime-ink shadow-[0_4px_16px_color-mix(in_oklab,var(--color-lime-flash)_25%,transparent)] transition hover:bg-lime-soft active:scale-90"
           >
             {loading ? (
               <span className="size-4 animate-spin rounded-full border-2 border-lime-ink/25 border-t-lime-ink" />
@@ -243,7 +243,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
             type="button"
             onClick={next}
             aria-label={m.player.next}
-            className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-white/[0.06] hover:text-ink-100 active:scale-90"
+            className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-fg/[0.06] hover:text-ink-100 active:scale-90"
           >
             <SkipForward className="size-4" />
           </button>
@@ -257,7 +257,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
               'hidden size-8 place-items-center rounded-full transition active:scale-90 sm:grid',
               repeat !== 'off'
                 ? 'text-lime-flash'
-                : 'text-ink-500 hover:bg-white/[0.06] hover:text-ink-100',
+                : 'text-ink-500 hover:bg-fg/[0.06] hover:text-ink-100',
             )}
           >
             <RepeatIcon className="size-3.5" />
@@ -270,7 +270,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
         {current.song && (
           <SongMenu
             songs={() => [current.song!]}
-            className="grid size-8 shrink-0 place-items-center rounded-full text-ink-400 transition hover:bg-white/[0.06] hover:text-lime-flash active:scale-90"
+            className="grid size-8 shrink-0 place-items-center rounded-full text-ink-400 transition hover:bg-fg/[0.06] hover:text-lime-flash active:scale-90"
             trigger={<ListPlus className="size-4" />}
           />
         )}
@@ -284,7 +284,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
             'grid size-8 shrink-0 place-items-center rounded-full transition active:scale-90',
             queueOpen
               ? 'bg-lime-flash/15 text-lime-flash'
-              : 'text-ink-400 hover:bg-white/[0.06] hover:text-ink-100',
+              : 'text-ink-400 hover:bg-fg/[0.06] hover:text-ink-100',
           )}
         >
           <ListMusic className="size-4" />
@@ -294,7 +294,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
           type="button"
           onClick={onExpand}
           aria-label={m.player.karaoke}
-          className="grid size-8 shrink-0 place-items-center rounded-full text-ink-400 transition hover:bg-white/[0.06] hover:text-lime-flash active:scale-90"
+          className="grid size-8 shrink-0 place-items-center rounded-full text-ink-400 transition hover:bg-fg/[0.06] hover:text-lime-flash active:scale-90"
         >
           <Captions className="size-4" />
         </button>
@@ -302,7 +302,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
           type="button"
           onClick={stop}
           aria-label={m.player.close}
-          className="grid size-8 shrink-0 place-items-center rounded-full text-ink-500 transition hover:bg-white/[0.06] hover:text-ink-200 active:scale-90"
+          className="grid size-8 shrink-0 place-items-center rounded-full text-ink-500 transition hover:bg-fg/[0.06] hover:text-ink-200 active:scale-90"
         >
           <X className="size-4" />
         </button>

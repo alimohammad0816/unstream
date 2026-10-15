@@ -7,8 +7,8 @@
   "description": "Download music, albums and playlists from Spotify, YouTube, SoundCloud and Deezer as tagged MP3 files.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0d0a",
-  "theme_color": "#0b0d0a",
+  "background_color": "#0a1020",
+  "theme_color": "#0a1020",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }

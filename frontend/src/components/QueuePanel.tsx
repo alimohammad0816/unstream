@@ -120,7 +120,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
           'group flex items-center gap-2 rounded-ctl p-2 transition',
           dragOver === slot && dragFrom !== slot
             ? 'bg-lime-flash/[0.08] ring-1 ring-lime-flash/30'
-            : 'hover:bg-white/[0.04]',
+            : 'hover:bg-fg/[0.04]',
           dragFrom === slot && 'opacity-40',
         )}
       >
@@ -139,7 +139,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={() => removeAt(at)}
           aria-label={m.player.removeFromQueue(item.title)}
-          className="grid size-7 shrink-0 place-items-center rounded-full text-ink-500 opacity-0 transition hover:bg-white/[0.06] hover:text-ink-100 focus-visible:opacity-100 group-hover:opacity-100"
+          className="grid size-7 shrink-0 place-items-center rounded-full text-ink-500 opacity-0 transition hover:bg-fg/[0.06] hover:text-ink-100 focus-visible:opacity-100 group-hover:opacity-100"
         >
           <X className="size-3.5" />
         </button>
@@ -152,16 +152,16 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
   return createPortal(
     <aside
       aria-label={m.player.queue}
-      className="fixed bottom-[4.25rem] end-3 top-12 z-50 flex w-[22rem] max-w-[calc(100vw-1.5rem)] animate-fade-up flex-col overflow-hidden rounded-panel border border-white/[0.08] bg-[#0f120d]/97 shadow-2xl shadow-black/60 backdrop-blur-xl"
+      className="fixed bottom-[4.25rem] end-3 top-12 z-50 flex w-[22rem] max-w-[calc(100vw-1.5rem)] animate-fade-up flex-col overflow-hidden rounded-panel border border-fg/[0.08] bg-panel/97 shadow-2xl shadow-shade/60 backdrop-blur-xl"
     >
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-white/[0.06] px-4">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-fg/[0.06] px-4">
         <h2 className="font-display text-sm font-bold text-ink-100">{m.player.queue}</h2>
         <div className="flex items-center gap-1">
           {upcoming.length > 0 && (
             <button
               type="button"
               onClick={clearUpcoming}
-              className="rounded-ctl px-2 py-1 text-micro font-semibold text-ink-400 transition hover:bg-white/[0.06] hover:text-ink-100"
+              className="rounded-ctl px-2 py-1 text-micro font-semibold text-ink-400 transition hover:bg-fg/[0.06] hover:text-ink-100"
             >
               {m.player.clearQueue}
             </button>
@@ -170,7 +170,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             aria-label={m.player.closeQueue}
-            className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-white/[0.06] hover:text-ink-100"
+            className="grid size-8 place-items-center rounded-full text-ink-400 transition hover:bg-fg/[0.06] hover:text-ink-100"
           >
             <X className="size-4" />
           </button>
@@ -196,7 +196,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
           <ol>{mine.map(renderItem)}</ol>
         )}
 
-        <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/[0.06] px-2 pt-4">
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-fg/[0.06] px-2 pt-4">
           <p className="min-w-0 truncate text-[10px] font-semibold text-ink-500">
             {m.player.autoplay.section}
           </p>

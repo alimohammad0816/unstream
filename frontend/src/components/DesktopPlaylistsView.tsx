@@ -89,7 +89,7 @@ function NameForm({
         placeholder={m.playlists.namePlaceholder}
         maxLength={200}
         dir="auto"
-        className="h-8 min-w-0 flex-1 rounded-ctl border border-white/[0.1] bg-black/30 px-2.5 text-mini text-ink-100 outline-none placeholder:text-ink-500 focus:border-lime-flash/50"
+        className="h-8 min-w-0 flex-1 rounded-ctl border border-fg/[0.1] bg-well/30 px-2.5 text-mini text-ink-100 outline-none placeholder:text-ink-500 focus:border-lime-flash/50"
       />
       <button
         type="submit"
@@ -107,7 +107,7 @@ function NameForm({
         type="button"
         onClick={onCancel}
         aria-label={m.playlists.cancel}
-        className="grid size-8 shrink-0 place-items-center rounded-ctl text-ink-400 transition hover:bg-white/[0.06] hover:text-ink-100"
+        className="grid size-8 shrink-0 place-items-center rounded-ctl text-ink-400 transition hover:bg-fg/[0.06] hover:text-ink-100"
       >
         <X className="size-3.5" />
       </button>
@@ -147,7 +147,7 @@ function ExportMenu({ playlist }: { playlist: Playlist }) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-9 items-center gap-1.5 rounded-ctl border border-white/[0.08] bg-white/[0.03] px-3 text-mini font-semibold text-ink-300 transition hover:border-white/[0.15] hover:text-ink-100 active:scale-95"
+        className="flex h-9 items-center gap-1.5 rounded-ctl border border-fg/[0.08] bg-fg/[0.03] px-3 text-mini font-semibold text-ink-300 transition hover:border-fg/[0.15] hover:text-ink-100 active:scale-95"
       >
         {run.isPending ? (
           <LoaderCircle className="size-3.5 animate-spin" />
@@ -159,7 +159,7 @@ function ExportMenu({ playlist }: { playlist: Playlist }) {
       {open && (
         <div
           role="menu"
-          className="absolute end-0 top-full z-30 mt-1.5 w-72 animate-fade-up rounded-panel border border-white/[0.08] bg-[#12150f] p-1.5 shadow-2xl shadow-black/60"
+          className="absolute end-0 top-full z-30 mt-1.5 w-72 animate-fade-up rounded-panel border border-fg/[0.08] bg-panel p-1.5 shadow-2xl shadow-shade/60"
         >
           {(['json', 'm3u8'] as const).map((format) => (
             <button
@@ -168,7 +168,7 @@ function ExportMenu({ playlist }: { playlist: Playlist }) {
               role="menuitem"
               disabled={run.isPending}
               onClick={() => run.mutate(format)}
-              className="flex w-full items-center gap-2.5 rounded-ctl px-2.5 py-2 text-start text-mini text-ink-200 transition hover:bg-white/[0.06] hover:text-ink-100"
+              className="flex w-full items-center gap-2.5 rounded-ctl px-2.5 py-2 text-start text-mini text-ink-200 transition hover:bg-fg/[0.06] hover:text-ink-100"
             >
               <FileDown className="size-4 shrink-0 text-ink-400" />
               {format === 'json' ? m.playlists.exportJson : m.playlists.exportM3u}
@@ -329,11 +329,11 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
 
   return (
     <div className="flex h-full min-w-0 flex-col overflow-hidden">
-      <header className="shrink-0 border-b border-white/[0.06] px-7 py-6">
+      <header className="shrink-0 border-b border-fg/[0.06] px-7 py-6">
         <div className="flex flex-wrap items-end gap-5">
           <PlaylistCover
             covers={covers}
-            className="size-28 shadow-xl shadow-black/50"
+            className="size-28 shadow-xl shadow-shade/50"
             iconClassName="size-9"
           />
           <div className="min-w-0 flex-1 basis-56">
@@ -406,7 +406,7 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
             onClick={shuffleAll}
             aria-label={m.playlists.shuffle}
             title={m.playlists.shuffle}
-            className="grid size-9 place-items-center rounded-ctl border border-white/[0.08] bg-white/[0.03] text-ink-300 transition hover:border-lime-flash/40 hover:text-lime-flash active:scale-95 disabled:opacity-40"
+            className="grid size-9 place-items-center rounded-ctl border border-fg/[0.08] bg-fg/[0.03] text-ink-300 transition hover:border-lime-flash/40 hover:text-lime-flash active:scale-95 disabled:opacity-40"
           >
             <Shuffle className="size-3.5" />
           </button>
@@ -416,7 +416,7 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
                 type="button"
                 disabled={download.isPending || running}
                 onClick={() => download.mutate()}
-                className="flex h-9 items-center gap-1.5 rounded-ctl border border-white/[0.08] bg-white/[0.03] px-3 text-mini font-semibold text-ink-200 transition hover:border-lime-flash/40 hover:text-lime-flash active:scale-95 disabled:opacity-60"
+                className="flex h-9 items-center gap-1.5 rounded-ctl border border-fg/[0.08] bg-fg/[0.03] px-3 text-mini font-semibold text-ink-200 transition hover:border-lime-flash/40 hover:text-lime-flash active:scale-95 disabled:opacity-60"
               >
                 {download.isPending || running ? (
                   <LoaderCircle className="size-3.5 animate-spin" />
@@ -437,7 +437,7 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
             songs={() => tracks.map((t) => playlistQueueItem(t).song!)}
             items={items}
             label={m.player.addToQueue}
-            className="grid size-9 place-items-center rounded-ctl border border-white/[0.08] bg-white/[0.03] text-ink-300 transition hover:border-lime-flash/40 hover:text-lime-flash active:scale-95"
+            className="grid size-9 place-items-center rounded-ctl border border-fg/[0.08] bg-fg/[0.03] text-ink-300 transition hover:border-lime-flash/40 hover:text-lime-flash active:scale-95"
           />
           <div className="ms-auto flex items-center gap-2">
             <ExportMenu playlist={playlist} />
@@ -469,7 +469,7 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
                 onClick={() => setConfirmDelete(true)}
                 aria-label={m.playlists.delete}
                 title={m.playlists.delete}
-                className="grid size-9 place-items-center rounded-ctl border border-white/[0.08] bg-white/[0.03] text-ink-400 transition hover:border-danger/40 hover:text-danger active:scale-95"
+                className="grid size-9 place-items-center rounded-ctl border border-fg/[0.08] bg-fg/[0.03] text-ink-400 transition hover:border-danger/40 hover:text-danger active:scale-95"
               >
                 <Trash2 className="size-3.5" />
               </button>
@@ -531,7 +531,7 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
                       ? 'border-lime-flash/30 bg-lime-flash/[0.07]'
                       : dragOver === at && dragFrom !== at
                         ? 'border-lime-flash/30 bg-lime-flash/[0.04]'
-                        : 'border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]',
+                        : 'border-transparent hover:border-fg/[0.06] hover:bg-fg/[0.03]',
                     dragFrom === at && 'opacity-40',
                   )}
                 >
@@ -605,7 +605,7 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
                     </span>
                   ) : (
                     <span
-                      className="hidden shrink-0 items-center gap-1 rounded bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-ink-400 sm:inline-flex"
+                      className="hidden shrink-0 items-center gap-1 rounded bg-fg/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-ink-400 sm:inline-flex"
                       title={m.player.online}
                     >
                       <Radio className="size-3" />
@@ -623,14 +623,14 @@ function PlaylistDetail({ id, onDeleted }: { id: string; onDeleted: () => void }
                     songs={() => [playlistQueueItem(entry).song!]}
                     items={() => [playlistQueueItem(entry)]}
                     label={m.player.more}
-                    className="grid size-8 shrink-0 place-items-center rounded-full text-ink-500 opacity-60 transition hover:bg-white/[0.06] hover:text-lime-flash group-hover:opacity-100 active:scale-90"
+                    className="grid size-8 shrink-0 place-items-center rounded-full text-ink-500 opacity-60 transition hover:bg-fg/[0.06] hover:text-lime-flash group-hover:opacity-100 active:scale-90"
                   />
                   <button
                     type="button"
                     onClick={() => remove.mutate(entry)}
                     aria-label={m.playlists.remove(entry.title)}
                     title={m.playlists.remove(entry.title)}
-                    className="grid size-8 shrink-0 place-items-center rounded-full text-ink-500 opacity-0 transition hover:bg-white/[0.06] hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
+                    className="grid size-8 shrink-0 place-items-center rounded-full text-ink-500 opacity-0 transition hover:bg-fg/[0.06] hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -691,8 +691,8 @@ export function DesktopPlaylistsView({
 
   return (
     <div className="flex h-full min-w-0 overflow-hidden bg-ink-950">
-      <section className="flex w-[17rem] shrink-0 flex-col border-e border-white/[0.06] bg-black/10">
-        <header className="shrink-0 space-y-3 border-b border-white/[0.06] px-4 py-5">
+      <section className="flex w-[17rem] shrink-0 flex-col border-e border-fg/[0.06] bg-well/10">
+        <header className="shrink-0 space-y-3 border-b border-fg/[0.06] px-4 py-5">
           <div>
             <h1 className="font-display text-xl font-bold tracking-tight text-ink-100">
               {m.playlists.title}
@@ -720,7 +720,7 @@ export function DesktopPlaylistsView({
                 onClick={() => fileRef.current?.click()}
                 disabled={importFile.isPending}
                 title={m.playlists.importHint}
-                className="flex h-8 items-center gap-1.5 rounded-ctl border border-white/[0.08] bg-white/[0.03] px-3 text-micro font-semibold text-ink-300 transition hover:border-white/[0.15] hover:text-ink-100 active:scale-95 disabled:opacity-60"
+                className="flex h-8 items-center gap-1.5 rounded-ctl border border-fg/[0.08] bg-fg/[0.03] px-3 text-micro font-semibold text-ink-300 transition hover:border-fg/[0.15] hover:text-ink-100 active:scale-95 disabled:opacity-60"
               >
                 {importFile.isPending ? (
                   <LoaderCircle className="size-3.5 animate-spin" />
@@ -766,7 +766,7 @@ export function DesktopPlaylistsView({
                     'mb-1 flex w-full items-center gap-3 rounded-ctl border p-2 text-start transition',
                     active
                       ? 'border-lime-flash/25 bg-lime-flash/[0.08]'
-                      : 'border-transparent hover:bg-white/[0.04]',
+                      : 'border-transparent hover:bg-fg/[0.04]',
                   )}
                 >
                   <PlaylistCover
@@ -803,7 +803,7 @@ export function DesktopPlaylistsView({
         ) : (
           !isPending && (
             <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-              <div className="mb-4 grid size-14 place-items-center rounded-2xl border border-white/[0.08] bg-white/[0.03] text-ink-400 shadow-xl">
+              <div className="mb-4 grid size-14 place-items-center rounded-2xl border border-fg/[0.08] bg-fg/[0.03] text-ink-400 shadow-xl">
                 <ListMusic className="size-6" strokeWidth={1.75} />
               </div>
               <h2 className="font-display text-base font-bold text-ink-100">{m.playlists.empty}</h2>

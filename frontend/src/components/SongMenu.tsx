@@ -118,7 +118,7 @@ export function SongMenu({
   }
 
   const rowClass =
-    'flex h-9 w-full items-center gap-2.5 rounded-ctl px-2.5 text-start text-mini text-ink-200 transition hover:bg-white/[0.06] hover:text-ink-100 disabled:opacity-50'
+    'flex h-9 w-full items-center gap-2.5 rounded-ctl px-2.5 text-start text-mini text-ink-200 transition hover:bg-fg/[0.06] hover:text-ink-100 disabled:opacity-50'
 
   return (
     <>
@@ -148,7 +148,7 @@ export function SongMenu({
             role="menu"
             onClick={(e) => e.stopPropagation()}
             style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, width: WIDTH }}
-            className="fixed z-[80] animate-fade-up rounded-panel border border-white/[0.08] bg-[#12150f]/98 p-1.5 text-ink-100 shadow-2xl shadow-black/60 backdrop-blur-xl"
+            className="fixed z-[80] animate-fade-up rounded-panel border border-fg/[0.08] bg-panel/98 p-1.5 text-ink-100 shadow-2xl shadow-shade/60 backdrop-blur-xl"
           >
             {player && items && (
               <>
@@ -170,7 +170,7 @@ export function SongMenu({
                   <ListEnd className="size-4 shrink-0 text-ink-400" />
                   {m.player.addToQueue}
                 </button>
-                <div className="my-1.5 h-px bg-white/[0.06]" />
+                <div className="my-1.5 h-px bg-fg/[0.06]" />
               </>
             )}
             <p className="px-2.5 pb-1 pt-0.5 text-[10px] font-semibold text-ink-500">
@@ -191,7 +191,7 @@ export function SongMenu({
                   placeholder={m.playlists.namePlaceholder}
                   dir="auto"
                   maxLength={200}
-                  className="h-8 min-w-0 flex-1 rounded-ctl border border-white/[0.1] bg-black/30 px-2 text-mini text-ink-100 outline-none placeholder:text-ink-500 focus:border-lime-flash/50"
+                  className="h-8 min-w-0 flex-1 rounded-ctl border border-fg/[0.1] bg-well/30 px-2 text-mini text-ink-100 outline-none placeholder:text-ink-500 focus:border-lime-flash/50"
                 />
                 <button
                   type="submit"

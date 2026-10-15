@@ -22,6 +22,13 @@ const fa: Messages = {
     num: fd,
   },
 
+  theme: {
+    label: 'تم',
+    system: 'مثل سیستم',
+    light: 'روشن',
+    dark: 'تیره',
+  },
+
   language: {
     label: 'زبان',
     picker: 'انتخاب زبان',
