@@ -12,6 +12,7 @@ import {
   type Playlist,
   type PlaylistTrack,
   type PlaylistTrackInput,
+  type Recommendation,
   type Track,
 } from './api'
 import { useMessages } from './i18n'
@@ -137,4 +138,38 @@ export function streamQueueItem(track: Track): QueueItem {
       source_url: track.source_url,
     },
   }
+}
+
+/** An autoplay suggestion as the player wants it: the file when it's on
+ *  disk, the stream when it isn't — and marked, so the queue can show it
+ *  apart from what the person queued themselves. */
+export function recommendationQueueItem(rec: Recommendation): QueueItem {
+  const song: PlaylistTrackInput = {
+    title: rec.title,
+    artists: rec.artists,
+    album: rec.album,
+    duration_ms: rec.duration_ms,
+    cover_url: rec.cover_url,
+    source_url: rec.source_url,
+  }
+  const base = {
+    title: rec.title,
+    artist: rec.artists.join(', '),
+    album: rec.album,
+    duration_ms: rec.duration_ms,
+    coverUrl: rec.cover_url ?? undefined,
+    hasCover: Boolean(rec.cover_url),
+    song,
+    auto: true,
+  }
+  if (rec.file_id) {
+    return {
+      ...base,
+      id: rec.file_id,
+      url: libraryFileUrl(rec.file_id),
+      coverUrl: rec.cover_url ?? libraryCoverUrl(rec.file_id),
+      hasCover: true,
+    }
+  }
+  return { ...base, id: `stream:auto:${rec.id}`, url: streamUrl(song), online: true }
 }

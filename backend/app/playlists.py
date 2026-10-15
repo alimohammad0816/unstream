@@ -243,6 +243,15 @@ class _Shelf:
         return None
 
 
+def on_disk(songs: list[dict]) -> list[str | None]:
+    """The library file for each song, or None — the same matching a
+    playlist gets, for songs that aren't in one (autoplay's suggestions)."""
+    shelf = _Shelf()
+    return [
+        shelf.match({"file": "", "artists": [], "duration_ms": 0} | song) for song in songs
+    ]
+
+
 def _annotate(playlist: dict, shelf: _Shelf) -> tuple[dict, bool]:
     """The playlist as the API serves it: every entry told whether it is on
     disk (`file_id`) and what to show as its art (`cover`). Returns whether a

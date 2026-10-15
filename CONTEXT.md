@@ -33,6 +33,11 @@ Playing a song in full, from disk or online. «آنلاین» marks a song that
 streams rather than plays from a file.
 _Avoid_: پلی، استریم (in UI copy)
 
+**پخش خودکار** (Autoplay):
+Carrying on with similar songs once the play queue runs out; the songs it
+adds are «آهنگ‌های مشابه».
+_Avoid_: اتوپلی، پخش اتوماتیک، پیشنهاد خودکار
+
 **خروجی** / **وارد کردن** (Export / Import):
 Saving a playlist to a file for another device or player, and making a
 playlist from such a file.

@@ -547,3 +547,29 @@ export function streamUrl(song: {
   if (song.source_url) params.set('source_url', song.source_url)
   return `/api/stream?${params.toString()}`
 }
+
+/** A song autoplay could queue next: catalog metadata, plus the library file
+ *  when it is already on disk. */
+export interface Recommendation {
+  id: string
+  title: string
+  artists: string[]
+  album: string
+  duration_ms: number
+  cover_url: string | null
+  source_url: string | null
+  file_id: string | null
+}
+
+/** Songs like this one, for autoplay — see backend/app/recommend.py. */
+export async function getRecommendations(
+  title: string,
+  artist: string,
+  signal?: AbortSignal,
+): Promise<Recommendation[]> {
+  const { data } = await client.get<{ tracks: Recommendation[] }>('/recommend', {
+    params: { title, artist },
+    signal,
+  })
+  return data.tracks
+}

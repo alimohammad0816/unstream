@@ -36,6 +36,7 @@ from . import (
     lyrics,
     net,
     playlists,
+    recommend,
     soundcloud,
     stream,
     ytdlp,
@@ -991,6 +992,26 @@ def playlist_export(playlist_id: str, body: PlaylistExport) -> dict:
     except OSError as exc:
         raise HTTPException(status_code=400, detail=f"Could not write the file: {exc}") from exc
     return {"path": str(path.resolve()), "dir": str(path.parent.resolve()), "filename": path.name}
+
+
+@app.get("/api/recommend")
+def recommend_tracks(
+    request: Request,
+    title: str = Query("", max_length=500),
+    artist: str = Query("", max_length=500),
+) -> dict:
+    """Songs like this one, for autoplay to queue when the queue runs out.
+    Each carries `file_id` when it is already in the library."""
+    if not title.strip() and not artist.strip():
+        raise HTTPException(status_code=400, detail="Nothing to suggest from")
+    limits.enforce("resolve", request)
+    try:
+        tracks = recommend.similar(title.strip(), artist.strip())
+    except ProviderError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except OSError as exc:
+        raise _unreachable(exc) from exc
+    return {"tracks": tracks}
 
 
 @app.api_route("/api/stream", methods=["GET", "HEAD"])

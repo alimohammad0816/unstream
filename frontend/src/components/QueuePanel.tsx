@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { GripVertical, Radio, X } from 'lucide-react'
+import { GripVertical, LoaderCircle, Radio, X } from 'lucide-react'
 import clsx from 'clsx'
 import { faNumerals, useMessages } from '../lib/i18n'
 import { usePlayer, type QueueItem } from '../lib/player'
 import { Artwork, PlayingBars } from './Artwork'
+import { AutoplayToggle } from './AutoplayToggle'
 
 function Row({
   item,
@@ -62,18 +63,89 @@ function Row({
 }
 
 /** What plays next, in the order it will play — shuffled or not. Songs can
- *  be dragged into a new order, dropped, or jumped to. */
+ *  be dragged into a new order, dropped, or jumped to; what autoplay lined
+ *  up is listed under its own heading, with the switch for it. */
 export function QueuePanel({ onClose }: { onClose: () => void }) {
   const m = useMessages()
-  const { queue, order, index, current, playing, playAt, removeAt, moveInOrder, clearUpcoming } =
-    usePlayer()
+  const {
+    queue,
+    order,
+    index,
+    current,
+    playing,
+    playAt,
+    removeAt,
+    moveInOrder,
+    clearUpcoming,
+    autoplay,
+    suggesting,
+  } = usePlayer()
   const [dragFrom, setDragFrom] = useState<number | null>(null)
   const [dragOver, setDragOver] = useState<number | null>(null)
 
   const pos = order.indexOf(index)
   const upcoming =
     pos === -1 ? [] : order.slice(pos + 1).map((at, k) => ({ at, slot: pos + 1 + k }))
+  // What the person queued, then what autoplay did — the player keeps the
+  // second behind the first, so they are listed that way too.
+  const mine = upcoming.filter(({ at }) => !queue[at].auto)
+  const auto = upcoming.filter(({ at }) => queue[at].auto)
 
+  const renderItem = ({ at, slot }: { at: number; slot: number }) => {
+    const item = queue[at]
+    return (
+      <li
+        key={`${item.id}-${at}`}
+        draggable
+        onDragStart={(e) => {
+          setDragFrom(slot)
+          e.dataTransfer.effectAllowed = 'move'
+        }}
+        onDragOver={(e) => {
+          if (dragFrom === null) return
+          e.preventDefault()
+          setDragOver(slot)
+        }}
+        onDragEnd={() => {
+          setDragFrom(null)
+          setDragOver(null)
+        }}
+        onDrop={(e) => {
+          e.preventDefault()
+          if (dragFrom !== null) moveInOrder(dragFrom, slot)
+          setDragFrom(null)
+          setDragOver(null)
+        }}
+        className={clsx(
+          'group flex items-center gap-2 rounded-ctl p-2 transition',
+          dragOver === slot && dragFrom !== slot
+            ? 'bg-lime-flash/[0.08] ring-1 ring-lime-flash/30'
+            : 'hover:bg-white/[0.04]',
+          dragFrom === slot && 'opacity-40',
+        )}
+      >
+        <GripVertical
+          className="size-3.5 shrink-0 cursor-grab text-ink-600 group-hover:text-ink-400"
+          aria-label={m.player.dragToReorder}
+        />
+        <button
+          type="button"
+          onClick={() => playAt(at)}
+          className="flex min-w-0 flex-1 items-center gap-3 text-start"
+        >
+          <Row item={item} />
+        </button>
+        <button
+          type="button"
+          onClick={() => removeAt(at)}
+          aria-label={m.player.removeFromQueue(item.title)}
+          className="grid size-7 shrink-0 place-items-center rounded-full text-ink-500 opacity-0 transition hover:bg-white/[0.06] hover:text-ink-100 focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <X className="size-3.5" />
+        </button>
+      </li>
+    )
+  }
   // Portalled out of the player bar: its backdrop blur makes it the
   // containing block for anything `fixed` inside it, which would pin this
   // panel to the bar instead of the window.
@@ -118,67 +190,28 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
         )}
 
         <p className="px-2 pb-1.5 pt-4 text-[10px] font-semibold text-ink-500">{m.player.upNext}</p>
-        {upcoming.length === 0 ? (
+        {mine.length === 0 ? (
           <p className="px-2 py-3 text-mini text-ink-500">{m.player.queueEmpty}</p>
         ) : (
-          <ol>
-            {upcoming.map(({ at, slot }) => {
-              const item = queue[at]
-              return (
-                <li
-                  key={`${item.id}-${at}`}
-                  draggable
-                  onDragStart={(e) => {
-                    setDragFrom(slot)
-                    e.dataTransfer.effectAllowed = 'move'
-                  }}
-                  onDragOver={(e) => {
-                    if (dragFrom === null) return
-                    e.preventDefault()
-                    setDragOver(slot)
-                  }}
-                  onDragEnd={() => {
-                    setDragFrom(null)
-                    setDragOver(null)
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    if (dragFrom !== null) moveInOrder(dragFrom, slot)
-                    setDragFrom(null)
-                    setDragOver(null)
-                  }}
-                  className={clsx(
-                    'group flex items-center gap-2 rounded-ctl p-2 transition',
-                    dragOver === slot && dragFrom !== slot
-                      ? 'bg-lime-flash/[0.08] ring-1 ring-lime-flash/30'
-                      : 'hover:bg-white/[0.04]',
-                    dragFrom === slot && 'opacity-40',
-                  )}
-                >
-                  <GripVertical
-                    className="size-3.5 shrink-0 cursor-grab text-ink-600 group-hover:text-ink-400"
-                    aria-label={m.player.dragToReorder}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => playAt(at)}
-                    className="flex min-w-0 flex-1 items-center gap-3 text-start"
-                  >
-                    <Row item={item} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeAt(at)}
-                    aria-label={m.player.removeFromQueue(item.title)}
-                    className="grid size-7 shrink-0 place-items-center rounded-full text-ink-500 opacity-0 transition hover:bg-white/[0.06] hover:text-ink-100 focus-visible:opacity-100 group-hover:opacity-100"
-                  >
-                    <X className="size-3.5" />
-                  </button>
-                </li>
-              )
-            })}
-          </ol>
+          <ol>{mine.map(renderItem)}</ol>
         )}
+
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-white/[0.06] px-2 pt-4">
+          <p className="min-w-0 truncate text-[10px] font-semibold text-ink-500">
+            {m.player.autoplay.section}
+          </p>
+          <AutoplayToggle hideLabel className="shrink-0" />
+        </div>
+        {autoplay &&
+          (auto.length > 0 ? (
+            <ol className="mt-1.5">{auto.map(renderItem)}</ol>
+          ) : (
+            <p className="flex items-center gap-2 px-2 py-3 text-mini text-ink-500">
+              {suggesting && <LoaderCircle className="size-3.5 shrink-0 animate-spin" />}
+              {suggesting ? m.player.autoplay.finding : m.player.autoplay.hint}
+            </p>
+          ))}
+        {!autoplay && <p className="px-2 py-3 text-mini text-ink-500">{m.player.autoplay.off}</p>}
       </div>
     </aside>,
     document.body,

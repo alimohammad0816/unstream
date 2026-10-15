@@ -16,6 +16,7 @@ import {
   settingsCardHeading,
 } from './DesktopConnectionSettings'
 import { LanguagePicker } from './LanguagePicker'
+import { AutoplayToggle } from './AutoplayToggle'
 import { LyricsToggle } from './LyricsToggle'
 import { QualityPicker } from './QualityPicker'
 import {
@@ -155,6 +156,12 @@ export function DesktopSettingsView({ focusConnection = false }: { focusConnecti
               </div>
               <div className="flex min-h-11 items-center justify-between gap-4 rounded-ctl border border-white/[0.07] bg-black/30 px-3.5">
                 <LyricsToggle className="w-full justify-between" />
+              </div>
+              <div className="rounded-ctl border border-white/[0.07] bg-black/30 px-3.5 py-2.5">
+                <AutoplayToggle className="w-full justify-between" />
+                <p className="mt-1.5 text-micro leading-relaxed text-ink-500">
+                  {m.player.autoplay.hint}
+                </p>
               </div>
             </div>
           </section>

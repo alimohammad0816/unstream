@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { PlaylistTrackInput } from './api'
+import { getRecommendations, type PlaylistTrackInput } from './api'
+import { recommendationQueueItem } from './playlists'
 
 /** One playable row: a library file or a streamed song, with everything the
  *  bar and the karaoke view need without asking the backend again. */
@@ -28,6 +29,10 @@ export interface QueueItem {
   /** The song as a playlist would keep it, so whatever is playing can be
    *  saved from the bar or the queue without knowing where it came from. */
   song?: PlaylistTrackInput
+  /** Queued by autoplay rather than by the person. Shown apart in the queue,
+   *  kept behind anything they queue themselves, and dropped when autoplay
+   *  is switched off. */
+  auto?: boolean
 }
 
 export type RepeatMode = 'off' | 'all' | 'one'
@@ -56,6 +61,11 @@ interface PlayerContextValue {
   moveInOrder: (from: number, to: number) => void
   /** Drop everything after the current song in play order. */
   clearUpcoming: () => void
+  /** When the queue runs out, keep going with songs like the last one. */
+  autoplay: boolean
+  toggleAutoplay: () => void
+  /** Autoplay is looking for what to play next. */
+  suggesting: boolean
   toggle: () => void
   next: () => void
   prev: () => void
@@ -100,6 +110,25 @@ const MUTED_KEY = 'unstream:muted'
 const SHUFFLE_KEY = 'unstream:shuffle'
 const REPEAT_KEY = 'unstream:repeat'
 const SESSION_KEY = 'unstream:session'
+const AUTOPLAY_KEY = 'unstream:autoplay'
+
+/** Autoplay asks for more when this few songs are left, so the next one is
+ *  already queued — and, for a stream, warmed up — before the last ends. */
+const AUTOPLAY_WHEN_LEFT = 1
+const AUTOPLAY_BATCH = 10
+const HISTORY_SIZE = 200
+
+/** One song's identity across sources: a Deezer suggestion and the same
+ *  song in the library or a playlist should not both be queued. */
+function songKey(item: QueueItem): string {
+  const norm = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim()
+  const lead = (item.song?.artists[0] ?? item.artist).split(/,|&| feat\.? | ft\.? /i)[0]
+  return `${norm(item.song?.title ?? item.title)}|${norm(lead)}`
+}
 
 /** What was playing when the app closed: the queue, the song, and how far
  *  in. Restored paused — reopening the app is not a request for sound. */
@@ -209,6 +238,19 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     ),
   )
   const [muted, setMuted] = useState(() => stored(MUTED_KEY, (raw) => raw === '1', false))
+  const [autoplay, setAutoplay] = useState(() => stored(AUTOPLAY_KEY, (raw) => raw !== '0', true))
+  const [suggesting, setSuggesting] = useState(false)
+  // The queue ran out while autoplay was still looking: play the first
+  // suggestion the moment it lands instead of leaving the player stopped.
+  const [awaitingAuto, setAwaitingAuto] = useState(false)
+  const awaitingAutoRef = useRef(false)
+  awaitingAutoRef.current = awaitingAuto
+  const autoplayRef = useRef(autoplay)
+  autoplayRef.current = autoplay
+  // Songs that have played this session, so autoplay never offers them back.
+  const historyRef = useRef<string[]>([])
+  // Seeds already asked about, so a re-render can't ask twice.
+  const seededRef = useRef<Set<string>>(new Set())
   // Read by `playQueue` when it first builds the element. Keeping them out
   // of its dependency list is what stops a volume drag from rebuilding the
   // whole player context.
@@ -328,6 +370,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (at === null) {
         setPlaying(false)
         setTime(0)
+        if (autoplayRef.current) setAwaitingAuto(true)
         return
       }
       if (at === indexRef.current) {
@@ -383,6 +426,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       if (items.length === 0) return
       const at = Math.min(Math.max(0, startIndex), items.length - 1)
       pendingSeekRef.current = null
+      seededRef.current.clear()
+      setAwaitingAuto(false)
       commit(items, shuffle ? shuffledOrder(items.length, at) : identity(items.length), at)
       load(at, true)
     },
@@ -426,10 +471,61 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         playQueue(items, 0)
         return
       }
-      const spliced = spliceIn(q, orderRef.current, q.length, items)
-      commit(spliced.queue, [...spliced.order, ...spliced.added], indexRef.current)
+      // Ahead of anything autoplay queued, the way every player does it:
+      // what the person picked plays before what was picked for them.
+      const o = orderRef.current
+      const pos = o.indexOf(indexRef.current)
+      const autoPos = o.findIndex((i, p) => p > pos && q[i].auto)
+      if (!shuffleRef.current) {
+        const at = autoPos === -1 ? q.length : o[autoPos]
+        const spliced = spliceIn(q, o, at, items)
+        commit(spliced.queue, identity(spliced.queue.length), indexRef.current)
+        return
+      }
+      const spliced = spliceIn(q, o, q.length, items)
+      const cut = autoPos === -1 ? spliced.order.length : autoPos
+      commit(
+        spliced.queue,
+        [...spliced.order.slice(0, cut), ...spliced.added, ...spliced.order.slice(cut)],
+        indexRef.current,
+      )
     },
     [commit, playQueue],
+  )
+
+  /** Autoplay's own append: at the very end, and straight into play when
+   *  the queue had already run out. */
+  const appendAuto = useCallback(
+    (items: QueueItem[]) => {
+      const q = queueRef.current
+      if (items.length === 0 || q.length === 0) return
+      const spliced = spliceIn(q, orderRef.current, q.length, items)
+      commit(spliced.queue, [...spliced.order, ...spliced.added], indexRef.current)
+      if (awaitingAutoRef.current) {
+        setAwaitingAuto(false)
+        load(spliced.added[0], true)
+      }
+    },
+    [commit, load],
+  )
+
+  /** Drop every upcoming song that `drop` picks; the current one stays. */
+  const dropUpcoming = useCallback(
+    (drop: (item: QueueItem) => boolean) => {
+      const q = queueRef.current
+      const o = orderRef.current
+      const pos = o.indexOf(indexRef.current)
+      const gone = new Set(o.filter((i, p) => p > pos && drop(q[i])))
+      if (gone.size === 0) return
+      const kept = q.map((_, i) => i).filter((i) => !gone.has(i))
+      const remap = new Map(kept.map((old, i) => [old, i]))
+      commit(
+        kept.map((i) => q[i]),
+        o.filter((i) => !gone.has(i)).map((i) => remap.get(i)!),
+        remap.get(indexRef.current)!,
+      )
+    },
+    [commit],
   )
 
   const removeAt = useCallback(
@@ -470,20 +566,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     [commit],
   )
 
-  const clearUpcoming = useCallback(() => {
-    const q = queueRef.current
-    const o = orderRef.current
-    const pos = o.indexOf(indexRef.current)
-    if (pos === -1) return
-    const keep = new Set(o.slice(0, pos + 1))
-    const kept = q.map((_, i) => i).filter((i) => keep.has(i))
-    const remap = new Map(kept.map((old, i) => [old, i]))
-    commit(
-      kept.map((i) => q[i]),
-      o.slice(0, pos + 1).map((i) => remap.get(i)!),
-      remap.get(indexRef.current)!,
-    )
-  }, [commit])
+  const clearUpcoming = useCallback(() => dropUpcoming(() => true), [dropUpcoming])
+
+  const toggleAutoplay = useCallback(() => {
+    const next = !autoplayRef.current
+    autoplayRef.current = next
+    setAutoplay(next)
+    remember(AUTOPLAY_KEY, next ? '1' : '0')
+    if (!next) {
+      // Off means off now, not after the ten songs it already lined up.
+      setAwaitingAuto(false)
+      dropUpcoming((item) => Boolean(item.auto))
+    } else {
+      seededRef.current.clear()
+    }
+  }, [dropUpcoming])
 
   const toggle = useCallback(() => {
     if (queueRef.current.length === 0) return
@@ -580,6 +677,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       el.load()
     }
     pendingSeekRef.current = null
+    setAwaitingAuto(false)
     commit([], [], 0)
     setPlaying(false)
     setFailed(false)
@@ -588,6 +686,56 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [commit])
 
   const current = queue[index] ?? null
+
+  useEffect(() => {
+    if (!current) return
+    const key = songKey(current)
+    const history = historyRef.current
+    if (history[history.length - 1] === key) return
+    history.push(key)
+    if (history.length > HISTORY_SIZE) history.splice(0, history.length - HISTORY_SIZE)
+  }, [current])
+
+  // Autoplay: when the queue is about to run out, line up songs like the
+  // one playing. Seeded by whatever is current, so a long session drifts the
+  // way a radio does rather than circling one artist. Repeat means the queue
+  // never runs out, so it never asks then.
+  const remaining = (() => {
+    const pos = order.indexOf(index)
+    return pos === -1 ? 0 : order.length - pos - 1
+  })()
+  useEffect(() => {
+    if (!autoplay || !current || repeat !== 'off') return
+    if (remaining > AUTOPLAY_WHEN_LEFT) return
+    if (!playing && !awaitingAuto) return
+    const seed = current.id
+    if (seededRef.current.has(seed)) return
+    seededRef.current.add(seed)
+    setSuggesting(true)
+    void getRecommendations(
+      current.song?.title ?? current.title,
+      current.song?.artists.join(', ') ?? current.artist,
+    )
+      .then((recs) => {
+        if (!autoplayRef.current) return
+        const taken = new Set([...queueRef.current.map(songKey), ...historyRef.current])
+        const fresh: QueueItem[] = []
+        for (const rec of recs) {
+          const item = recommendationQueueItem(rec)
+          const key = songKey(item)
+          if (taken.has(key)) continue
+          taken.add(key)
+          fresh.push(item)
+          if (fresh.length === AUTOPLAY_BATCH) break
+        }
+        appendAuto(fresh)
+      })
+      .catch(() => {
+        // Nothing to suggest, or no network: the queue simply ends, as it
+        // did before autoplay existed.
+      })
+      .finally(() => setSuggesting(false))
+  }, [autoplay, current, repeat, remaining, playing, awaitingAuto, appendAuto])
 
   // Streaming a song costs seconds of searching before the first byte, so
   // the next one is resolved while this one plays. HEAD does the search and
@@ -681,6 +829,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       removeAt,
       moveInOrder,
       clearUpcoming,
+      autoplay,
+      toggleAutoplay,
+      suggesting,
       toggle,
       next,
       prev,
@@ -707,6 +858,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       removeAt,
       moveInOrder,
       clearUpcoming,
+      autoplay,
+      toggleAutoplay,
+      suggesting,
       toggle,
       next,
       prev,

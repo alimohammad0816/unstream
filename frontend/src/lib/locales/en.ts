@@ -420,6 +420,16 @@ const en = {
     streamFailed: "Couldn't find this song to play online",
     playFull: 'Play the full song',
     playFullFor: (title: string) => `Play “${title}”`,
+    autoplay: {
+      label: 'Autoplay',
+      onShort: 'On',
+      offShort: 'Off',
+      on: 'Autoplay on — songs like the last one play when the queue ends',
+      off: 'Autoplay off — playback stops when the queue ends',
+      hint: 'When the queue ends, keep playing songs like the last one — from your library when you have them, online when you don’t.',
+      section: 'Autoplay · songs like this one',
+      finding: 'Finding songs like this one…',
+    },
   },
 
   playlists: {
