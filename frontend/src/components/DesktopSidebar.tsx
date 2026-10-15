@@ -3,6 +3,7 @@ import {
   ArrowDownToLine,
   AudioLines,
   FolderOpen,
+  Library,
   ListMusic,
   LoaderCircle,
   Pause,
@@ -22,18 +23,29 @@ import {
 import { useDownloads } from '../lib/downloads'
 import { useMessages } from '../lib/i18n'
 import { usePlayer } from '../lib/player'
-import { Artwork, PlayingBars } from './Artwork'
+import { usePlaylists } from '../lib/playlists'
+import { Artwork, PlayingBars, PlaylistCover } from './Artwork'
 
-export type DesktopTab = 'search' | 'downloads' | 'library' | 'settings'
+export type DesktopTab = 'search' | 'downloads' | 'library' | 'playlists' | 'settings'
 
 interface DesktopSidebarProps {
   activeTab: DesktopTab
   onSelectTab: (tab: DesktopTab) => void
   onOpenKaraoke?: () => void
+  /** The playlist open in the Playlists tab, highlighted in the list here. */
+  activePlaylist?: string | null
+  onOpenPlaylist?: (id: string) => void
 }
 
-export function DesktopSidebar({ activeTab, onSelectTab, onOpenKaraoke }: DesktopSidebarProps) {
+export function DesktopSidebar({
+  activeTab,
+  onSelectTab,
+  onOpenKaraoke,
+  activePlaylist,
+  onOpenPlaylist,
+}: DesktopSidebarProps) {
   const m = useMessages()
+  const { data: playlists } = usePlaylists()
   const { activeCount, entries } = useDownloads()
   const { current, playing, toggle } = usePlayer()
   const [downloadsDir, setDownloadsDir] = useState<string>('')
@@ -76,14 +88,20 @@ export function DesktopSidebar({ activeTab, onSelectTab, onOpenKaraoke }: Deskto
     {
       id: 'library',
       label: m.desktopNav.library,
-      icon: ListMusic,
+      icon: Library,
       shortcut: isMac ? '⌘3' : 'Alt+3',
+    },
+    {
+      id: 'playlists',
+      label: m.desktopNav.playlists,
+      icon: ListMusic,
+      shortcut: isMac ? '⌘4' : 'Alt+4',
     },
     {
       id: 'settings',
       label: m.desktopNav.settings,
       icon: Settings,
-      shortcut: isMac ? '⌘4' : 'Alt+4',
+      shortcut: isMac ? '⌘5' : 'Alt+5',
     },
   ] as const
 
@@ -117,7 +135,7 @@ export function DesktopSidebar({ activeTab, onSelectTab, onOpenKaraoke }: Deskto
       </button>
 
       {/* Main Navigation */}
-      <nav className="flex-1 space-y-1 px-2.5 py-3" aria-label={m.desktopNav.navigationLabel}>
+      <nav className="shrink-0 space-y-1 px-2.5 py-3" aria-label={m.desktopNav.navigationLabel}>
         {navItems.map(({ id, label, icon: Icon, shortcut }) => {
           const active = activeTab === id
           return (
@@ -164,6 +182,44 @@ export function DesktopSidebar({ activeTab, onSelectTab, onOpenKaraoke }: Deskto
           )
         })}
       </nav>
+
+      {/* The person's playlists, one click from anywhere */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-2">
+        {playlists && playlists.length > 0 && (
+          <>
+            <p className="px-3 pb-1.5 pt-1 text-[10px] font-semibold text-ink-500">
+              {m.desktopNav.playlists}
+            </p>
+            {playlists.map((playlist) => {
+              const active = activeTab === 'playlists' && activePlaylist === playlist.id
+              return (
+                <button
+                  key={playlist.id}
+                  type="button"
+                  onClick={() => onOpenPlaylist?.(playlist.id)}
+                  aria-label={m.playlists.open(playlist.name)}
+                  className={clsx(
+                    'flex h-9 w-full items-center gap-2.5 rounded-ctl px-2 text-start transition',
+                    active
+                      ? 'bg-white/[0.06] text-ink-100'
+                      : 'text-ink-400 hover:bg-white/[0.04] hover:text-ink-100',
+                  )}
+                >
+                  <PlaylistCover
+                    covers={playlist.covers}
+                    className="size-6"
+                    rounded="rounded-md"
+                    iconClassName="size-3"
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-medium" dir="auto">
+                    {playlist.name}
+                  </span>
+                </button>
+              )
+            })}
+          </>
+        )}
+      </div>
 
       {/* Now Playing Mini-Player in Sidebar (if active) */}
       {current && (

@@ -3,6 +3,7 @@ import {
   ArrowDownToLine,
   CornerDownLeft,
   FolderOpen,
+  Library,
   Link2,
   ListMusic,
   Search,
@@ -75,7 +76,8 @@ export function DesktopCommandPalette({
         icon: ArrowDownToLine,
         tab: 'downloads',
       },
-      { id: 'nav-library', label: m.desktopNav.library, icon: ListMusic, tab: 'library' },
+      { id: 'nav-library', label: m.desktopNav.library, icon: Library, tab: 'library' },
+      { id: 'nav-playlists', label: m.desktopNav.playlists, icon: ListMusic, tab: 'playlists' },
       { id: 'nav-settings', label: m.desktopNav.settings, icon: Settings, tab: 'settings' },
     ]
     for (const item of nav) {

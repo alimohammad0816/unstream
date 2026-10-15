@@ -172,7 +172,8 @@ export function KaraokeView({ onClose }: { onClose: () => void }) {
     queryFn: async (): Promise<Lyrics> => {
       const force = retrying.current
       retrying.current = false
-      const onDisk = force ? null : await getLibraryLyrics(current!.id)
+      // A streamed song has no file to read; it goes straight to the network.
+      const onDisk = force || current!.online ? null : await getLibraryLyrics(current!.id)
       // Timings are what make this karaoke rather than a page of text, so
       // the ranking is synced-anywhere first, not on-disk first. A file
       // carrying a synced .lrc wins outright and needs no network; a file

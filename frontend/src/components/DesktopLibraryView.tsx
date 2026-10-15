@@ -18,6 +18,7 @@ import {
   getLibrary,
   libraryCoverUrl,
   libraryFileUrl,
+  libraryInput,
   type LibraryTrack,
 } from '../lib/api'
 import { faNumerals, useMessages } from '../lib/i18n'
@@ -25,6 +26,7 @@ import type { Messages } from '../lib/locales/en'
 import { usePlayer, type QueueItem } from '../lib/player'
 import { useVirtualRows } from '../lib/virtual'
 import { Artwork, PlayingBars } from './Artwork'
+import { SongMenu } from './SongMenu'
 
 export function toQueueItem(track: LibraryTrack): QueueItem {
   return {
@@ -36,6 +38,7 @@ export function toQueueItem(track: LibraryTrack): QueueItem {
     url: libraryFileUrl(track.id),
     coverUrl: track.has_cover ? libraryCoverUrl(track.id) : undefined,
     hasCover: track.has_cover,
+    song: libraryInput(track),
   }
 }
 
@@ -271,16 +274,20 @@ export function DesktopLibraryView() {
                   const at = rows.start + i
                   const active = current?.id === track.id
                   return (
-                    <li key={track.id} style={{ height: ROW_HEIGHT - 6 }}>
+                    <li
+                      key={track.id}
+                      style={{ height: ROW_HEIGHT - 6 }}
+                      className={clsx(
+                        'group flex items-center gap-2 rounded-panel border pe-3 transition',
+                        active
+                          ? 'border-lime-flash/30 bg-lime-flash/[0.07] shadow-md shadow-black/40'
+                          : 'border-white/[0.06] bg-ink-900/60 hover:border-white/[0.12] hover:bg-ink-900/90',
+                      )}
+                    >
                       <button
                         type="button"
                         onClick={() => (active ? toggle() : playAt(at))}
-                        className={clsx(
-                          'group flex h-full w-full items-center gap-4 rounded-panel border p-3 text-start transition active:scale-[0.995]',
-                          active
-                            ? 'border-lime-flash/30 bg-lime-flash/[0.07] shadow-md shadow-black/40'
-                            : 'border-white/[0.06] bg-ink-900/60 hover:border-white/[0.12] hover:bg-ink-900/90',
-                        )}
+                        className="flex h-full min-w-0 flex-1 items-center gap-4 p-3 pe-1 text-start transition active:scale-[0.995]"
                       >
                         {/* Artwork */}
                         <Artwork
@@ -354,6 +361,12 @@ export function DesktopLibraryView() {
                           )}
                         </span>
                       </button>
+                      <SongMenu
+                        songs={() => [libraryInput(track)]}
+                        items={() => [toQueueItem(track)]}
+                        label={m.player.more}
+                        className="grid size-8 shrink-0 place-items-center rounded-full text-ink-500 opacity-60 transition hover:bg-white/[0.06] hover:text-lime-flash group-hover:opacity-100 active:scale-90"
+                      />
                     </li>
                   )
                 })}

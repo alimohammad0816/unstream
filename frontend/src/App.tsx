@@ -52,6 +52,9 @@ const DesktopLibraryView = lazy(() =>
 const DesktopDownloadsView = lazy(() =>
   import('./components/DesktopDownloadsView').then((m) => ({ default: m.DesktopDownloadsView })),
 )
+const DesktopPlaylistsView = lazy(() =>
+  import('./components/DesktopPlaylistsView').then((m) => ({ default: m.DesktopPlaylistsView })),
+)
 const DesktopSettingsView = lazy(() =>
   import('./components/DesktopSettingsView').then((m) => ({ default: m.DesktopSettingsView })),
 )
@@ -322,6 +325,7 @@ function Shell() {
   const [initialParams] = useState(() => new URLSearchParams(window.location.search))
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [desktopTab, setDesktopTab] = useState<DesktopTab>('search')
+  const [openPlaylist, setOpenPlaylist] = useState<string | null>(null)
   // Set when a failure sends the person to Settings: the Connection card
   // scrolls into view and runs its test without being asked.
   const [connectionFocus, setConnectionFocus] = useState(false)
@@ -554,6 +558,10 @@ function Shell() {
           return
         } else if (e.key === '4') {
           e.preventDefault()
+          setDesktopTab('playlists')
+          return
+        } else if (e.key === '5') {
+          e.preventDefault()
           setDesktopTab('settings')
           return
         }
@@ -649,6 +657,11 @@ function Shell() {
                 setDesktopTab(tab)
               }}
               onOpenKaraoke={() => setKaraokeOpen(true)}
+              activePlaylist={openPlaylist}
+              onOpenPlaylist={(id) => {
+                setOpenPlaylist(id)
+                setDesktopTab('playlists')
+              }}
             />
 
             <div className="flex-1 min-h-0 overflow-hidden">
@@ -660,6 +673,8 @@ function Shell() {
                   />
                 ) : desktopTab === 'library' ? (
                   <DesktopLibraryView />
+                ) : desktopTab === 'playlists' ? (
+                  <DesktopPlaylistsView selectedId={openPlaylist} onSelect={setOpenPlaylist} />
                 ) : desktopTab === 'settings' ? (
                   <DesktopSettingsView focusConnection={connectionFocus} />
                 ) : (

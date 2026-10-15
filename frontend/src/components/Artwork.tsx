@@ -79,3 +79,50 @@ export function PlayingBars({ className }: { className?: string }) {
     </span>
   )
 }
+
+/** A playlist's art: its first four covers as a 2×2 grid, the first alone
+ *  when it has fewer, the glyph when it has none. */
+export function PlaylistCover({
+  covers,
+  className,
+  rounded = 'rounded-[10px]',
+  iconClassName,
+}: {
+  covers: string[]
+  className?: string
+  rounded?: string
+  iconClassName?: string
+}) {
+  if (covers.length < 4) {
+    return (
+      <Artwork
+        src={covers[0]}
+        hasCover={covers.length > 0}
+        className={className}
+        rounded={rounded}
+        iconClassName={iconClassName}
+      />
+    )
+  }
+  return (
+    <span
+      className={clsx(
+        'grid shrink-0 grid-cols-2 grid-rows-2 overflow-hidden bg-black/40 ring-1 ring-white/[0.08]',
+        rounded,
+        className,
+      )}
+    >
+      {covers.slice(0, 4).map((src) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          className="size-full object-cover"
+        />
+      ))}
+    </span>
+  )
+}

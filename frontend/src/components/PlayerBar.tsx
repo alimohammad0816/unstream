@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Captions,
+  ListMusic,
+  ListPlus,
   Pause,
   Play,
   Repeat,
@@ -19,6 +21,8 @@ import { faNumerals, useMessages } from '../lib/i18n'
 import type { Messages } from '../lib/locales/en'
 import { usePlayer, usePlayerTime, usePlayerVolume } from '../lib/player'
 import { Artwork } from './Artwork'
+import { QueuePanel } from './QueuePanel'
+import { SongMenu } from './SongMenu'
 
 function clock(seconds: number, m: Messages): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '--:--'
@@ -98,7 +102,8 @@ function VolumeControl({ m }: { m: Messages }) {
 }
 
 /** Persistent mini player pinned to the bottom of the desktop shell. Plays
- *  the on-disk library through the backend stream — no second download. */
+ *  the on-disk library through the backend's file route, and anything else
+ *  through its stream relay — no second download either way. */
 export function PlayerBar({ onExpand }: { onExpand: () => void }) {
   const m = useMessages()
   const {
@@ -116,6 +121,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
     cycleRepeat,
     stop,
   } = usePlayer()
+  const [queueOpen, setQueueOpen] = useState(false)
 
   // Transport keys, but never while someone is typing — the filter box and
   // the search field both live a keystroke away from this bar.
@@ -139,6 +145,10 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [current, toggle, seekBy])
+
+  useEffect(() => {
+    if (!current) setQueueOpen(false)
+  }, [current])
 
   if (!current) return null
 
@@ -185,7 +195,11 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
             dir="auto"
           >
             {failed && <TriangleAlert className="size-3 shrink-0 text-danger" />}
-            {failed ? m.player.unplayable : current.artist || m.player.unknownArtist}
+            {failed
+              ? current.online
+                ? m.player.streamFailed
+                : m.player.unplayable
+              : current.artist || m.player.unknownArtist}
           </span>
         </button>
 
@@ -253,6 +267,29 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
         <Scrubber m={m} />
         <VolumeControl m={m} />
 
+        {current.song && (
+          <SongMenu
+            songs={() => [current.song!]}
+            className="grid size-8 shrink-0 place-items-center rounded-full text-ink-400 transition hover:bg-white/[0.06] hover:text-lime-flash active:scale-90"
+            trigger={<ListPlus className="size-4" />}
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => setQueueOpen((open) => !open)}
+          aria-pressed={queueOpen}
+          aria-label={queueOpen ? m.player.closeQueue : m.player.openQueue}
+          title={m.player.queue}
+          className={clsx(
+            'grid size-8 shrink-0 place-items-center rounded-full transition active:scale-90',
+            queueOpen
+              ? 'bg-lime-flash/15 text-lime-flash'
+              : 'text-ink-400 hover:bg-white/[0.06] hover:text-ink-100',
+          )}
+        >
+          <ListMusic className="size-4" />
+        </button>
+
         <button
           type="button"
           onClick={onExpand}
@@ -270,6 +307,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
           <X className="size-4" />
         </button>
       </div>
+      {queueOpen && <QueuePanel onClose={() => setQueueOpen(false)} />}
     </div>
   )
 }
