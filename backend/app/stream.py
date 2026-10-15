@@ -21,6 +21,11 @@ A resolved source is cached per song until shortly before its URL expires,
 because the player asks for many ranges of one song and resolution takes
 seconds; a URL that turns out to be dead is dropped and resolved once more.
 
+Some uploads have no single-file stream at all — SoundCloud serves most of
+its catalogue as HLS, a playlist of segments a relay cannot pass through as
+one URL. Those are fetched whole into a small cache first (a song is a few
+MB, and yt-dlp joins the segments) and served from there, ranges included.
+
 Desktop only, like playlists, unless `UNSTREAM_STREAMING` says otherwise: on
 a server the bytes would cross its bandwidth for every listener, and
 YouTube refuses datacenter addresses before any of this gets a turn.
@@ -28,6 +33,7 @@ YouTube refuses datacenter addresses before any of this gets a turn.
 
 import os
 import re
+import tempfile
 import threading
 import time
 import urllib.error
@@ -35,11 +41,12 @@ import urllib.request
 from collections import OrderedDict
 from collections.abc import Iterator
 from dataclasses import dataclass
+from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-from yt_dlp import YoutubeDL
+from yt_dlp.utils import DownloadError
 
-from . import downloader
+from . import downloader, ytdlp
 from .models import Track
 from .ytdlp import base_opts
 
@@ -56,6 +63,14 @@ _READ_BYTES = 64 * 1024
 _CACHE_SIZE = 256
 _DEFAULT_TTL = 3600
 _EXPIRY_MARGIN = 300
+
+# Songs fetched whole because they had no single-file stream. Small, and
+# trimmed to the most recent few, since each is a song someone just played.
+CACHE_DIR = Path(
+    os.getenv("UNSTREAM_STREAM_CACHE", Path(tempfile.gettempdir()) / "unstream-stream")
+)
+CACHE_FILES = 40
+_CACHED_TTL = 6 * 3600
 
 _MEDIA_TYPES = {
     "m4a": "audio/mp4",
@@ -87,6 +102,8 @@ class Source:
     headers: dict
     ext: str
     expires: float
+    # Set when the song was fetched whole into the cache: served from disk.
+    path: Path | None = None
 
     @property
     def media_type(self) -> str:
@@ -119,6 +136,43 @@ def _expiry(url: str) -> float:
     return time.time() + _DEFAULT_TTL
 
 
+def _trim_cache() -> None:
+    try:
+        files = sorted(CACHE_DIR.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True)
+    except OSError:
+        return
+    for old in files[CACHE_FILES:]:
+        old.unlink(missing_ok=True)
+
+
+def _fetch_whole(page_url: str) -> Source:
+    """The song downloaded into the cache, for uploads that only offer
+    segmented (HLS) streams. No re-encode: the audio is kept as it came."""
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    stem = re.sub(r"[^A-Za-z0-9_-]+", "_", page_url)[-80:]
+    opts = base_opts(
+        format="bestaudio/best",
+        outtmpl=str(CACHE_DIR / f"{stem}.%(ext)s"),
+        noplaylist=True,
+        retries=3,
+        socket_timeout=15,
+        overwrites=True,
+        noprogress=True,
+    )
+    info = ytdlp.run(opts, lambda ydl: ydl.extract_info(page_url, download=True))
+    path = Path(info["requested_downloads"][0]["filepath"]) if info.get("requested_downloads") else None
+    if path is None or not path.is_file():
+        raise StreamError("The audio could not be fetched")
+    _trim_cache()
+    return Source(
+        url="",
+        headers={},
+        ext=path.suffix.lstrip(".").lower(),
+        expires=time.time() + _CACHED_TTL,
+        path=path,
+    )
+
+
 def _extract(page_url: str) -> Source:
     opts = base_opts(
         format=FORMAT,
@@ -127,8 +181,12 @@ def _extract(page_url: str) -> Source:
         retries=2,
         socket_timeout=15,
     )
-    with YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(page_url, download=False)
+    try:
+        info = ytdlp.run(opts, lambda ydl: ydl.extract_info(page_url, download=False))
+    except DownloadError as exc:
+        if "Requested format is not available" not in str(exc):
+            raise
+        return _fetch_whole(page_url)
     if not info or not info.get("url"):
         raise StreamError("No playable format on that page")
     media = info["url"]
@@ -217,11 +275,50 @@ def _open(source: Source, byte_range: str):
     return urllib.request.urlopen(request, timeout=20)
 
 
+def _from_file(source: Source, byte_range: str) -> Relay:
+    """A cached song, served with the same ranges a relay would answer."""
+    path = source.path
+    size = path.stat().st_size
+    start, _, end = byte_range.removeprefix("bytes=").partition("-")
+    if not start:
+        first, last = max(0, size - int(end or 0)), size - 1
+    else:
+        first, last = int(start), min(int(end) if end else size - 1, size - 1)
+    if first >= size:
+        raise StreamError("Range past the end of the song")
+    length = last - first + 1
+
+    def body() -> Iterator[bytes]:
+        with path.open("rb") as handle:
+            handle.seek(first)
+            left = length
+            while left > 0 and (chunk := handle.read(min(_READ_BYTES, left))):
+                left -= len(chunk)
+                yield chunk
+
+    return Relay(
+        status=206,
+        headers={
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "no-store",
+            "Content-Length": str(length),
+            "Content-Range": f"bytes {first}-{last}/{size}",
+            "Content-Type": source.media_type,
+        },
+        body=body(),
+    )
+
+
 def open_relay(track: Track, range_header: str | None) -> Relay:
     """Open the song at the requested range, re-resolving once if the cached
     URL has gone stale under us (403/404/410 from the media host)."""
     byte_range = _bounded(range_header)
     source = resolve(track)
+    if source.path is not None:
+        if not source.path.is_file():
+            source = resolve(track, fresh=True)
+        if source.path is not None:
+            return _from_file(source, byte_range)
     try:
         upstream = _open(source, byte_range)
     except urllib.error.HTTPError as exc:
