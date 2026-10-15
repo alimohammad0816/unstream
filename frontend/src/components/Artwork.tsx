@@ -41,7 +41,7 @@ export function Artwork({
     <span
       className={clsx(
         'relative grid shrink-0 place-items-center overflow-hidden ring-1 transition',
-        showImage ? 'bg-black/40 ring-white/[0.08]' : 'bg-white/[0.05] ring-white/[0.06]',
+        showImage ? 'bg-black/40 ring-fg/[0.08]' : 'bg-fg/[0.05] ring-fg/[0.06]',
         rounded,
         className,
       )}
@@ -107,7 +107,7 @@ export function PlaylistCover({
   return (
     <span
       className={clsx(
-        'grid shrink-0 grid-cols-2 grid-rows-2 overflow-hidden bg-black/40 ring-1 ring-white/[0.08]',
+        'grid shrink-0 grid-cols-2 grid-rows-2 overflow-hidden bg-black/40 ring-1 ring-fg/[0.08]',
         rounded,
         className,
       )}

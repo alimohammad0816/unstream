@@ -167,10 +167,10 @@ export function DesktopCommandPalette({
         role="dialog"
         aria-modal="true"
         aria-label={m.desktopNav.search}
-        className="w-full max-w-xl overflow-hidden rounded-panel border border-white/[0.14] bg-[#10130f]/95 shadow-[0_30px_90px_rgba(0,0,0,0.65)] backdrop-blur-2xl"
+        className="w-full max-w-xl overflow-hidden rounded-panel border border-fg/[0.14] bg-panel/95 shadow-[0_30px_90px_rgba(0,0,0,0.65)] backdrop-blur-2xl"
       >
         {/* Search Bar */}
-        <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3 bg-black/20">
+        <div className="flex items-center gap-3 border-b border-fg/[0.08] px-4 py-3 bg-well/20">
           <Search className="size-4.5 shrink-0 text-lime-flash" />
           <input
             ref={inputRef}
@@ -180,7 +180,7 @@ export function DesktopCommandPalette({
             dir="auto"
             className="h-9 w-full bg-transparent text-sm font-medium text-ink-100 outline-none placeholder:text-ink-500"
           />
-          <kbd className="shrink-0 rounded border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 font-sans text-micro font-medium text-ink-400">
+          <kbd className="shrink-0 rounded border border-fg/[0.1] bg-fg/[0.04] px-2 py-0.5 font-sans text-micro font-medium text-ink-400">
             esc
           </kbd>
         </div>
@@ -204,7 +204,7 @@ export function DesktopCommandPalette({
                     'flex h-11 w-full items-center gap-3 rounded-ctl px-3.5 text-start text-mini transition duration-100',
                     isActive
                       ? 'bg-lime-flash/[0.1] border border-lime-flash/30 text-ink-100 shadow-sm'
-                      : 'border border-transparent text-ink-300 hover:bg-white/[0.04] hover:text-ink-100',
+                      : 'border border-transparent text-ink-300 hover:bg-fg/[0.04] hover:text-ink-100',
                   )}
                 >
                   <Icon
@@ -238,7 +238,7 @@ export function DesktopCommandPalette({
         </ul>
 
         {/* Footer shortcuts hint */}
-        <div className="flex items-center justify-between border-t border-white/[0.06] bg-black/40 px-4 py-2 text-[10px] text-ink-500 font-mono">
+        <div className="flex items-center justify-between border-t border-fg/[0.06] bg-well/30 px-4 py-2 text-[10px] text-ink-500 font-mono">
           <div className="flex items-center gap-3">
             <span>↑↓ Navigate</span>
             <span>↵ Select</span>

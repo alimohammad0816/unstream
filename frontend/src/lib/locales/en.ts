@@ -25,6 +25,15 @@ const en = {
     num: (value: number | string) => String(value),
   },
 
+  theme: {
+    label: 'Theme',
+    palette: 'Colour',
+    palettes: { lime: 'Original', blue: 'Blue' },
+    system: 'Match the system',
+    light: 'Light',
+    dark: 'Dark',
+  },
+
   language: {
     label: 'Language',
     picker: 'Choose a language',

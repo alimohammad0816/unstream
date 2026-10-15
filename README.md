@@ -20,7 +20,7 @@ Paste a **Spotify / Deezer / Apple Music / YouTube / SoundCloud** track, album o
 
 No accounts. No API keys. Nothing paid. You run it, so the files are yours and nobody is standing in between.
 
-The desktop app is also a full music player: play anything in full before downloading it, keep your own **playlists** — mixing songs on disk with ones that stream — download a whole playlist in one go, rearrange the queue, let **autoplay** carry on with similar songs when the queue ends (switchable), and export a playlist to open on another device (or as `.m3u8` in any other player).
+The desktop app is also a full music player: play anything in full before downloading it, keep your own **playlists** — mixing songs on disk with ones that stream — download a whole playlist in one go, rearrange the queue, let **autoplay** carry on with similar songs when the queue ends (switchable), pick a **light or dark theme** in the original lime or in blue, and export a playlist to open on another device (or as `.m3u8` in any other player).
 
 > The interface ships in **Farsi and English**, switchable from the header. Farsi is the default because that is the audience it was built for ([why](docs/DESIGN.md#farsi-only)); set `UNSTREAM_DEFAULT_LOCALE=en` if you want English to be what people land on.
 
