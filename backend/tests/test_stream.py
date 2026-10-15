@@ -149,3 +149,62 @@ def test_find_falls_through_sources(monkeypatch):
     got = stream._find(_track(source_url="https://own/page"))
     assert got.url == "https://scsearch5/hit"
     assert pages == ["https://own/page", "https://ytsearch8/hit", "https://scsearch5/hit"]
+
+
+def test_pinned_clients_are_dropped_on_a_youtube_failure(monkeypatch):
+    from app import ytdlp
+
+    seen = []
+
+    class FakeYDL:
+        def __init__(self, opts):
+            self.opts = opts
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def action(ydl):
+        clients = (ydl.opts.get("extractor_args") or {}).get("youtube", {}).get("player_client")
+        seen.append(clients)
+        if clients:
+            raise ytdlp.YtdlpError("ERROR: [youtube] x: The page needs to be reloaded.")
+        return "ok"
+
+    monkeypatch.setattr(ytdlp, "YoutubeDL", FakeYDL)
+    opts = {"extractor_args": {"youtube": {"player_client": ["tv", "web"]}}}
+    assert ytdlp.run(opts, action) == "ok"
+    assert seen == [["tv", "web"], None]
+
+    # Nothing pinned, or not YouTube's refusal: the error is the answer.
+    with pytest.raises(ytdlp.YtdlpError):
+        ytdlp.run({}, lambda ydl: (_ for _ in ()).throw(ytdlp.YtdlpError("[youtube] boom")))
+    with pytest.raises(ytdlp.YtdlpError):
+        ytdlp.run(opts, lambda ydl: (_ for _ in ()).throw(ytdlp.YtdlpError("[soundcloud] boom")))
+
+
+def test_segmented_only_uploads_are_fetched_whole_and_served_with_ranges(monkeypatch, tmp_path):
+    song = tmp_path / "song.opus"
+    song.write_bytes(bytes(range(256)) * 4)  # 1024 bytes
+
+    def no_single_file(opts, action):
+        raise stream.DownloadError("ERROR: [soundcloud] 1: Requested format is not available.")
+
+    monkeypatch.setattr(stream.ytdlp, "run", no_single_file)
+    monkeypatch.setattr(
+        stream,
+        "_fetch_whole",
+        lambda page: stream.Source("", {}, "opus", time.time() + 60, path=song),
+    )
+    source = stream._extract("https://soundcloud.com/a/b")
+    assert source.path == song
+
+    monkeypatch.setattr(stream, "_find", lambda track: source)
+    relay = stream.open_relay(_track(), "bytes=1000-")
+    assert relay.status == 206
+    assert relay.headers["Content-Range"] == "bytes 1000-1023/1024"
+    assert b"".join(relay.body) == song.read_bytes()[1000:]
+    tail = stream.open_relay(_track(), "bytes=-24")
+    assert b"".join(tail.body) == song.read_bytes()[-24:]

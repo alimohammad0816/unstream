@@ -47,10 +47,12 @@ def test_radio_of_the_matching_artist_without_the_seed(api):
         + [_item(10 + i, f"Song {i}", "Other") for i in range(30)]
     }
     got = recommend.similar("Bohemian Rhapsody", "Queen")
-    titles = [t["title"] for t in got]
+    assert len(got) == recommend.MAX_RESULTS
+    # Shuffled before it is cut to size, so which songs survive the cut is
+    # random; asked for everything, the filtering itself is what shows.
+    titles = [t["title"] for t in recommend.similar("Bohemian Rhapsody", "Queen", limit=100)]
     assert "Bohemian Rhapsody" not in titles
     assert titles.count("Headlong") == 1
-    assert len(got) == recommend.MAX_RESULTS
     # The tribute act's hit was skipped for the artist we were given.
     assert ("/artist/412/radio", {"limit": recommend.RADIO_SIZE}) in calls
 
