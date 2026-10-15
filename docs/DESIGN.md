@@ -4,6 +4,7 @@ The decisions in here are load-bearing: things that look like mistakes until you
 
 - [The shape of it](#the-shape-of-it)
 - [Farsi first, with a language layer](#farsi-only)
+- [Colour: two palettes, two modes](#colour)
 - [One self-hosted typeface per script](#typeface)
 - [Which digits a number gets](#digits)
 - [Analytics, recorded server-side](#analytics)
@@ -129,6 +130,19 @@ This reverses an earlier decision ("no i18n framework, no strings file, no langu
 - The `/admin` dashboard is English and LTR regardless of the picker. It governs the product, and that page is not the product: it is owner-facing and its screenshots are meant to travel.
 
 `CONTEXT.md` fixes the canonical Farsi rendering of each domain term. Copy changes should agree with it.
+
+<a id="colour"></a>
+
+## Colour: two palettes, two modes
+
+The interface has one chromatic colour, the accent, and everything else is a neutral ramp. That rule is unchanged; what is new is that the colours are a choice. There are two palettes — the **original** lime on green-tinted blacks, which stays the default, and **blue**, an azure accent on navy — and each comes in **dark** and **light**, with "match the system" as a third option for the mode.
+
+**A theme is a set of token values, not a set of classes.** Every colour a component uses is a token in `index.css` (`ink-*`, `lime-*`, `danger`, and four that used to be spelled as hex or as raw white and black in components: `shell`, `panel`, `fg`, `well`). The `@theme` block holds the original dark palette; `data-palette` and `data-theme` on `<html>` select blocks that redefine the same tokens. No component knows which theme it is drawn in, a switch re-renders nothing, and `src/lib/theme.ts` sets both attributes before the first render so a light-mode user never sees a dark frame.
+
+- **The accent keeps its `lime-*` name in every palette.** Renaming it would touch every component for no change in behaviour; the name records where the token came from, and the comment beside it says so.
+- **Overlays are mixed from `fg`, not white.** `bg-white/[0.06]` is a hover wash on a dark page and nothing at all on a white one, so translucent washes and hairlines mix from `fg`, which is white in dark modes and the page's own ink in light ones. Recessed areas (input wells) mix from `well` for the same reason. A solid `text-white` on a danger button stays white: it is on red, not on the page.
+- **The light accents are deeper than the dark ones.** Both accents are also text — the playing row's title, the active tab — and lime or sky blue on white fail contrast. Light mode deepens lime to olive and azure to royal blue, and flips the text on accent buttons to white.
+- **The splash screen and the manifest keep the original palette.** The splash is its own window and shows before any preference can be read, and the manifest is read by the OS at install time — neither can follow a setting, so they show the default.
 
 <a id="typeface"></a>
 

@@ -38,6 +38,11 @@ Carrying on with similar songs once the play queue runs out; the songs it
 adds are «آهنگ‌های مشابه».
 _Avoid_: اتوپلی، پخش اتوماتیک، پیشنهاد خودکار
 
+**تم** / **رنگ** (Theme / Palette):
+The light-or-dark mode, and the accent palette it is drawn in («اصلی» or
+«آبی»). Modes are «روشن» and «تیره».
+_Avoid_: پوسته، قالب، دارک‌مود
+
 **خروجی** / **وارد کردن** (Export / Import):
 Saving a playlist to a file for another device or player, and making a
 playlist from such a file.

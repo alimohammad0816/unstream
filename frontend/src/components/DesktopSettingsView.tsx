@@ -16,6 +16,7 @@ import {
   settingsCardHeading,
 } from './DesktopConnectionSettings'
 import { LanguagePicker } from './LanguagePicker'
+import { PalettePicker } from './PalettePicker'
 import { ThemePicker } from './ThemePicker'
 import { AutoplayToggle } from './AutoplayToggle'
 import { LyricsToggle } from './LyricsToggle'
@@ -182,6 +183,9 @@ export function DesktopSettingsView({ focusConnection = false }: { focusConnecti
               </div>
               <div className="flex min-h-11 items-center rounded-ctl border border-fg/[0.07] bg-well/30 px-3.5">
                 <ThemePicker className="w-full justify-between" />
+              </div>
+              <div className="flex min-h-11 items-center rounded-ctl border border-fg/[0.07] bg-well/30 px-3.5">
+                <PalettePicker className="w-full justify-between" />
               </div>
             </div>
           </section>

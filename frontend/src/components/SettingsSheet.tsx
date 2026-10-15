@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { FolderOpen, RefreshCw } from 'lucide-react'
 import clsx from 'clsx'
 import { LanguagePicker } from './LanguagePicker'
+import { PalettePicker } from './PalettePicker'
 import { ThemePicker } from './ThemePicker'
 import { LyricsToggle } from './LyricsToggle'
 import { QualityPicker } from './QualityPicker'
@@ -88,6 +89,10 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
 
           <div className="py-4">
             <ThemePicker />
+          </div>
+
+          <div className="py-4">
+            <PalettePicker />
           </div>
 
           <div className="py-4">

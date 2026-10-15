@@ -27,6 +27,8 @@ const en = {
 
   theme: {
     label: 'Theme',
+    palette: 'Colour',
+    palettes: { lime: 'Original', blue: 'Blue' },
     system: 'Match the system',
     light: 'Light',
     dark: 'Dark',

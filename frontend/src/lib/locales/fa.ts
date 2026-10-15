@@ -24,6 +24,8 @@ const fa: Messages = {
 
   theme: {
     label: 'تم',
+    palette: 'رنگ',
+    palettes: { lime: 'اصلی', blue: 'آبی' },
     system: 'مثل سیستم',
     light: 'روشن',
     dark: 'تیره',
