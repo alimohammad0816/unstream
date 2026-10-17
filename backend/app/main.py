@@ -8,6 +8,7 @@ import io
 import json
 import os
 import re
+import uuid
 import zipfile
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -453,6 +454,55 @@ def get_lyrics(
         "synced": found.synced if found else None,
         "source": found.source if found else None,
     }
+
+
+class SongDownload(BaseModel):
+    title: str
+    artists: list[str] = []
+    album: str = ""
+    duration_ms: int = 0
+    cover_url: str | None = None
+    source_url: str | None = None
+    quality: str = downloader.DEFAULT_QUALITY
+    lyrics: bool = True
+
+
+@app.post("/api/download/song")
+def download_song(body: SongDownload, request: Request) -> dict:
+    """Download one song known only by its metadata — the one the player is
+    streaming has no catalog page to hand to /api/download."""
+    if body.quality not in downloader.QUALITIES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Quality must be one of: {', '.join(downloader.QUALITIES)}",
+        )
+    if not body.title.strip():
+        raise HTTPException(status_code=400, detail="No tracks to download")
+    client = limits.enforce("download", request)
+    if limits.MAX_ACTIVE_JOBS > 0 and jobs.active_count(client) >= limits.MAX_ACTIVE_JOBS:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many downloads at once — wait for one to finish.",
+        )
+    source_url = body.source_url if body.source_url and re.match(r"^https?://", body.source_url) else None
+    track = Track(
+        id=uuid.uuid4().hex,
+        title=body.title.strip(),
+        artists=body.artists or [""],
+        album=body.album,
+        duration_ms=max(0, body.duration_ms),
+        cover_url=body.cover_url,
+        source_url=source_url,
+    )
+    name = f"{', '.join(a for a in track.artists if a)} - {track.title}".strip(" -")
+    visitor = limits.visitor(request)
+    job = jobs.start(
+        name, [track], body.quality, embed_lyrics=body.lyrics, owner=client, visitor=visitor
+    )
+    analytics.record(
+        "download_start", visitor=visitor, source="song", detail=body.quality, label=name, value=1
+    )
+    return {"job_id": job.id, "name": name, "tracks": [{"id": track.id, "title": track.title}]}
 
 
 @app.post("/api/download")
