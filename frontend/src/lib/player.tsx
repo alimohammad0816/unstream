@@ -748,7 +748,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     if (pos === -1) return ''
     const urls: string[] = []
     for (let step = 1; step <= WARM_AHEAD; step++) {
-      const at = order[pos + step] ?? (repeat === 'all' ? order[(pos + step) % order.length] : undefined)
+      const at =
+        order[pos + step] ?? (repeat === 'all' ? order[(pos + step) % order.length] : undefined)
       const item = at == null ? null : queue[at]
       if (item?.online && !urls.includes(item.url)) urls.push(item.url)
     }
