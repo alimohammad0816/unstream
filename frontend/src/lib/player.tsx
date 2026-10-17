@@ -116,6 +116,8 @@ const AUTOPLAY_KEY = 'unstream:autoplay'
  *  already queued — and, for a stream, warmed up — before the last ends. */
 const AUTOPLAY_WHEN_LEFT = 1
 const AUTOPLAY_BATCH = 10
+/** How many songs ahead of the current one a stream is warmed up. */
+const WARM_AHEAD = 2
 const HISTORY_SIZE = 200
 
 /** One song's identity across sources: a Deezer suggestion and the same
@@ -738,21 +740,24 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   }, [autoplay, current, repeat, remaining, playing, awaitingAuto, appendAuto])
 
   // Streaming a song costs seconds of searching before the first byte, so
-  // the next one is resolved while this one plays. HEAD does the search and
-  // fills the backend's cache without moving any audio.
-  const upcoming = (() => {
+  // the next ones are resolved while this one plays. HEAD does the search and
+  // fills the backend's cache without moving any audio. Two ahead, started at
+  // once: one song is often shorter than one slow resolve.
+  const upcomingKey = (() => {
     const pos = order.indexOf(index)
-    const at = pos === -1 ? null : (order[pos + 1] ?? (repeat === 'all' ? order[0] : null))
-    return at == null ? null : (queue[at] ?? null)
+    if (pos === -1) return ''
+    const urls: string[] = []
+    for (let step = 1; step <= WARM_AHEAD; step++) {
+      const at = order[pos + step] ?? (repeat === 'all' ? order[(pos + step) % order.length] : undefined)
+      const item = at == null ? null : queue[at]
+      if (item?.online && !urls.includes(item.url)) urls.push(item.url)
+    }
+    return urls.join('\n')
   })()
-  const upcomingUrl = upcoming?.online ? upcoming.url : null
   useEffect(() => {
-    if (!playing || !upcomingUrl) return
-    const timer = window.setTimeout(() => {
-      void fetch(upcomingUrl, { method: 'HEAD' }).catch(() => {})
-    }, 4000)
-    return () => window.clearTimeout(timer)
-  }, [playing, upcomingUrl])
+    if (!playing || !upcomingKey) return
+    for (const url of upcomingKey.split('\n')) void fetch(url, { method: 'HEAD' }).catch(() => {})
+  }, [playing, upcomingKey])
 
   // The OS now-playing panel and the keyboard's media keys. Without this the
   // play/pause key does nothing and macOS shows the browser's own name where

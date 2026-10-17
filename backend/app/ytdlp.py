@@ -261,6 +261,10 @@ def without_pinned_clients(opts: dict) -> dict | None:
     return out
 
 
+# Set once the default clients have worked where the pinned ones were refused.
+_pin_refused = False
+
+
 def run(opts: dict, action):
     """`action(ydl)` on a YoutubeDL built from `opts`, retried once without
     the player-client pin when YouTube refuses the pinned clients.
@@ -274,15 +278,23 @@ def run(opts: dict, action):
     break playback or downloads on its own. A cancel is not an error and is
     never retried.
     """
+    global _pin_refused
+    fallback = without_pinned_clients(opts)
+    if _pin_refused and fallback is not None:
+        # YouTube already refused the pin in this process; trying it again
+        # costs ~20s of retries per song before the default gets its turn.
+        with YoutubeDL(fallback) as ydl:
+            return action(ydl)
     try:
         with YoutubeDL(opts) as ydl:
             return action(ydl)
     except YtdlpError as exc:
-        fallback = without_pinned_clients(opts)
         if fallback is None or "[youtube]" not in str(exc):
             raise
     with YoutubeDL(fallback) as ydl:
-        return action(ydl)
+        result = action(ydl)
+    _pin_refused = True
+    return result
 
 
 def is_desktop() -> bool:
