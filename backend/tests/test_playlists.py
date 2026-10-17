@@ -202,3 +202,30 @@ def test_api_flow_and_download_of_missing_songs(env, monkeypatch):
     assert client.get("/api/playlists/nope").status_code == 404
     assert client.delete(f"/api/playlists/{made['id']}").json() == {"ok": True}
     assert client.get("/api/playlists").json() == {"playlists": []}
+
+
+def test_download_one_song_by_metadata(monkeypatch):
+    started = {}
+
+    def fake_start(name, tracks, quality, **kwargs):
+        started.update(name=name, tracks=tracks, quality=quality)
+
+        class _Job:
+            id = "job1"
+
+        return _Job()
+
+    monkeypatch.setattr(jobs, "start", fake_start)
+    client = TestClient(main.app)
+
+    res = client.post(
+        "/api/download/song",
+        json={"title": "Party", "artists": ["ZEDBAZI"], "quality": "192", "source_url": "javascript:x"},
+    )
+    assert res.status_code == 200
+    assert res.json()["name"] == "ZEDBAZI - Party"
+    (track,) = started["tracks"]
+    assert track.title == "Party" and track.source_url is None and started["quality"] == "192"
+
+    assert client.post("/api/download/song", json={"title": "  "}).status_code == 400
+    assert client.post("/api/download/song", json={"title": "x", "quality": "9"}).status_code == 400

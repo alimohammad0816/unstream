@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import {
+  ArrowDownToLine,
   Captions,
+  Check,
   ListMusic,
   ListPlus,
+  LoaderCircle,
   Pause,
   Play,
   Repeat,
@@ -17,9 +20,12 @@ import {
   X,
 } from 'lucide-react'
 import clsx from 'clsx'
+import { apiError, type PlaylistTrackInput } from '../lib/api'
+import { songDownloadUrl, useDownloads } from '../lib/downloads'
 import { faNumerals, useMessages } from '../lib/i18n'
 import type { Messages } from '../lib/locales/en'
 import { usePlayer, usePlayerTime, usePlayerVolume } from '../lib/player'
+import { useToast } from '../lib/toast'
 import { Artwork } from './Artwork'
 import { QueuePanel } from './QueuePanel'
 import { SongMenu } from './SongMenu'
@@ -98,6 +104,61 @@ function VolumeControl({ m }: { m: Messages }) {
         }}
       />
     </div>
+  )
+}
+
+/** Saves the song that is playing to the music folder. Only a song that is
+ *  being streamed needs it — one already on disk has nothing left to
+ *  download. */
+function DownloadCurrent({ song }: { song: PlaylistTrackInput }) {
+  const { startSong, entryForUrl, quality } = useDownloads()
+  const title = song.title
+  const { push } = useToast()
+  const m = useMessages()
+  const [pending, setPending] = useState(false)
+
+  const entry = entryForUrl(songDownloadUrl(song))
+  const live = entry && !entry.expired ? entry : null
+  const queued = live != null && !live.job?.finished
+  const done = live?.job?.finished ?? false
+
+  const handleClick = async () => {
+    if (pending || queued) return
+    setPending(true)
+    try {
+      await startSong(song)
+      push(m.quick.queued(title))
+    } catch (err) {
+      push(apiError(err, m), 'error')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      title={
+        done
+          ? m.quick.done
+          : queued
+            ? m.quick.running
+            : quality === 'original'
+              ? m.quick.original
+              : m.quick.kbps(quality)
+      }
+      aria-label={m.quick.download(title)}
+      className="grid size-8 shrink-0 place-items-center rounded-full text-ink-400 transition hover:bg-fg/[0.06] hover:text-lime-flash active:scale-90"
+    >
+      {pending || queued ? (
+        <LoaderCircle className="size-4 animate-spin text-lime-flash" />
+      ) : done ? (
+        <Check className="size-4 text-lime-flash" />
+      ) : (
+        <ArrowDownToLine className="size-4" />
+      )}
+    </button>
   )
 }
 
@@ -267,6 +328,7 @@ export function PlayerBar({ onExpand }: { onExpand: () => void }) {
         <Scrubber m={m} />
         <VolumeControl m={m} />
 
+        {current.online && current.song && <DownloadCurrent song={current.song} />}
         {current.song && (
           <SongMenu
             songs={() => [current.song!]}

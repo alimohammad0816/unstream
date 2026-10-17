@@ -511,6 +511,21 @@ export async function downloadPlaylist(
   return data
 }
 
+/** One song known only by its metadata — what the player has for a stream.
+ *  Resolves to the job, shaped like a playlist's so the dock can show it. */
+export async function downloadSong(
+  song: PlaylistTrackInput,
+  quality: Quality,
+  lyrics: boolean,
+): Promise<{ job_id: string; name: string; tracks: { id: string; title: string }[] }> {
+  const { data } = await client.post<{
+    job_id: string
+    name: string
+    tracks: { id: string; title: string }[]
+  }>('/download/song', { ...song, quality, lyrics })
+  return data
+}
+
 export type PlaylistFormat = 'json' | 'm3u8'
 
 /** Writes the export into the music folder's Playlists/ and answers with
